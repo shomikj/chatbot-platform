@@ -1,6 +1,6 @@
-fastapi==0.75.0
-uvicorn==0.17.6
-Authlib
-starlette
-gradio
-huggingface-hub
+fastapi==0.115.12
+uvicorn==0.34.0
+Authlib==1.5.2
+starlette==0.46.1
+gradio==5.23.3
+huggingface-hub==0.30.1
