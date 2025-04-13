@@ -12,18 +12,19 @@ import json
 
 app = FastAPI()
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+#GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+#GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
-config_data = {'GOOGLE_CLIENT_ID': GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': GOOGLE_CLIENT_SECRET}
-starlette_config = Config(environ=config_data)
-oauth = OAuth(starlette_config)
-oauth.register(
-    name='google',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'},
-)
-app.add_middleware(SessionMiddleware, secret_key="my_secret")
+#config_data = {'GOOGLE_CLIENT_ID': GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': GOOGLE_CLIENT_SECRET}
+#starlette_config = Config(environ=config_data)
+#oauth = OAuth(starlette_config)
+#oauth.register(
+#    name='google',
+#    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+#    client_kwargs={'scope': 'openid email profile'},
+#)
+#app.add_middleware(SessionMiddleware, secret_key="my_secret")
+
 
 def get_user(request: Request):
     user = request.session.get('user')
@@ -34,10 +35,11 @@ def get_user(request: Request):
 @app.get('/')
 def public(user: dict = Depends(get_user)):
     if user:
-        return RedirectResponse(url='/chat')
+        return RedirectResponse(url='/login-page')
     else:
         return RedirectResponse(url='/login-page')
 
+'''
 @app.route('/logout')
 async def logout(request: Request):
     request.session.pop('user', None)
@@ -57,12 +59,14 @@ async def auth(request: Request):
         return RedirectResponse(url='/')
     request.session['user'] = dict(access_token)["userinfo"]
     return RedirectResponse(url='/')
+'''
 
 with gr.Blocks() as login_demo:
-    gr.Button("Login", link="/login")
+    gr.Button("Login")#, link="/login")
 
 app = gr.mount_gradio_app(app, login_demo, path="/login-page")
 
+'''
 def greet(request: gr.Request):
     return f"Welcome to Gradio, {request.username}"
 
@@ -71,6 +75,4 @@ with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }
     main_demo.load(greet, inputs=None, outputs=[msg])
 
 app = gr.mount_gradio_app(app, main_demo, path="/chat", auth_dependency=get_user)
-
-if __name__ == '__main__':
-    uvicorn.run(app)
+'''
