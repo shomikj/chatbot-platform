@@ -60,20 +60,10 @@ with gr.Blocks() as login_demo:
 
 app = gr.mount_gradio_app(app, login_demo, path="/login-page")
 
-def alternatingly_agree(message, history):
-    if len([h for h in history if h['role'] == "assistant"]) % 2 == 0:
-        return f"Yes, I do think that: {message}"
-    else:
-        return "I don't think so"
+with gr.Blocks() as main_demo:
+    logout_button = gr.Button("Logout", link="/logout")
 
-demo = gr.ChatInterface(
-    fn=alternatingly_agree, 
-    title="Alternating ChatBot",
-    description="This chatbot alternates between agreeing and disagreeing with you.",
-    type="messages"
-)
-
-app = gr.mount_gradio_app(app, demo, path="/chat")
+app = gr.mount_gradio_app(app, main_demo, path="/chat", auth_dependency=get_user)
 
 if __name__ == '__main__':
     uvicorn.run(app)
