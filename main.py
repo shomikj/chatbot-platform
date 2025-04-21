@@ -27,7 +27,7 @@ oauth.register(
 )
 app.add_middleware(SessionMiddleware, secret_key="my_secret")
 
-data_folder = Path("mnt/user_data/")
+data_folder = Path("/mnt/user_data/")
 
 def get_user(request: Request):
     user = request.session.get('user')
@@ -169,7 +169,7 @@ function updateFeedbackDiv() {
 """
 
 with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }") as main_demo:
-    chatbot = gr.Chatbot(type="messages", show_share_button=False, show_copy_button=True, visible=False, resizeable=True, feedback_options=["Redact From Study"])
+    chatbot = gr.Chatbot(type="messages", show_share_button=False, show_copy_button=True, visible=False, feedback_options=["Redact From Study"])
     msg = gr.Textbox(show_label=False, submit_btn=True, placeholder="Ask anything", visible=True)
     logout_button = gr.Button("Logout", link="/logout")
     main_demo.load(load_data, inputs=None, outputs=[chatbot]).then(load_app, inputs=None, outputs=[chatbot, msg])
