@@ -7,6 +7,9 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 import os
 from starlette.responses import RedirectResponse
 from huggingface_hub import InferenceClient
+import json
+from datetime import datetime
+from pathlib import Path
 
 app = FastAPI()
 
@@ -22,6 +25,8 @@ oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 app.add_middleware(SessionMiddleware, secret_key="my_secret")
+
+data_folder = Path("/mnt/user_data/")
 
 def get_user(request: Request):
     user = request.session.get('user')
@@ -44,7 +49,6 @@ async def logout(request: Request):
 @app.route('/login')
 async def login(request: Request):
     redirect_uri = request.url_for('auth')
-    #redirect_uri = urlunparse(urlparse(str(redirect_uri))._replace(scheme='https'))
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.route('/auth')
@@ -64,7 +68,33 @@ app = gr.mount_gradio_app(app, login_demo, path="/login-page")
 
 # Populate the chatbot with the user's previous interactions
 def load_data(request: gr.Request):
-    return []
+    user_interactions_file = data_folder / f"interactions_{request.username}.json"
+    user_redactions_file = data_folder / f"redactions_{request.username}.json"
+
+    local_interactions_exist = os.path.exists(user_interactions_file)
+    local_redactions_exist = os.path.exists(user_redactions_file)
+
+    history = []
+    if os.path.exists(user_interactions_file):
+        with user_interactions_file.open("r") as f:
+            for line in f:
+                turn = json.loads(line)
+                history.append({"role": "user", "content": turn["input"]})
+                history.append({"role": "assistant", "content": turn["output"]})
+    
+    redactions = []
+    if os.path.exists(user_redactions_file):
+        with user_redactions_file.open("r") as f:
+            for line in f:
+                feedback = json.loads(line)
+                redactions.append(feedback["message_idx"])
+
+    # Remove redacted messages from history
+    for r in redactions:
+        del history[r]
+        del history[r-1]
+
+    return history
 
 # Make the chatbot and msg visible only after data loaded
 def load_app():
@@ -85,10 +115,22 @@ def generate_response(request: gr.Request | None, history: list):
     ).choices[0].message.content
     history.append({"role": "assistant", "content": bot_message})
 
+    if request is not None:
+        user_interactions_file = data_folder / f"interactions_{request.username}.json"
+        with user_interactions_file.open("a") as f:
+            f.write(json.dumps({"timestamp": datetime.now().isoformat(), "input": history[-2]["content"], "output": history[-1]["content"]}))
+            f.write("\n")
+
     return history
 
 # Record redaction feedback and save in local file
 def redact_msg(message: gr.LikeData, request: gr.Request | None, history: list):
+    if request is not None and message.liked == "Redact From Study":
+        user_redactions_file = data_folder / f"redactions_{request.username}.json"
+        with user_redactions_file.open("a") as f:
+            f.write(json.dumps({"timestamp": datetime.now().isoformat(), "message_idx": message.index}))
+            f.write("\n")
+
     del history[message.index] # Delete the chatbot message
     del history[message.index-1] # Delete the user message
     return history    
