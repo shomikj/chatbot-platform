@@ -6,13 +6,14 @@ from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
 import os
 from starlette.responses import RedirectResponse
-from huggingface_hub import InferenceClient
 import json
 from datetime import datetime
 from pathlib import Path
+import openai
 
 app = FastAPI()
 
+openai.api_key = os.getenv("OPENAI_API_KEY")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
@@ -106,14 +107,19 @@ def save_msg(user_message, history: list):
 
 # Generate bot's response and save in local file
 def generate_response(request: gr.Request | None, history: list):
-    client = InferenceClient("HuggingFaceH4/zephyr-7b-beta", token=os.getenv("HF_TOKEN"))
+    client = openai.OpenAI()
+    
+    formatted_history = []
+    for h in history:
+        formatted_history.append({"role": h["role"], "content": h["content"]})
 
-    bot_message = client.chat.completions.create(
-        messages=history,
-        temperature=0.7,
-        max_tokens=256,
-    ).choices[0].message.content
-    history.append({"role": "assistant", "content": bot_message})
+    response = client.responses.create(
+        model="gpt-4.1-2025-04-14",
+        input=formatted_history,
+        temperature=1
+    )
+
+    history.append({"role": "assistant", "content": response.output_text})
 
     if request is not None:
         user_interactions_file = data_folder / f"interactions_{request.username}.json"

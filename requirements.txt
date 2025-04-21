@@ -4,4 +4,4 @@ fastapi
 starlette
 authlib
 itsdangerous
-huggingface_hub
+openai
