@@ -114,7 +114,7 @@ def generate_response(request: gr.Request | None, history: list):
         formatted_history.append({"role": h["role"], "content": h["content"]})
 
     response = client.responses.create(
-        model="gpt-4.1-2025-04-14",
+        model="gpt-4.1-mini-2025-04-14",
         input=formatted_history,
         temperature=1
     )
