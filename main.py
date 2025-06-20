@@ -168,11 +168,23 @@ function updateFeedbackDiv() {
 }
 """
 
+scroll_to_bottom_js = """
+function scrollChatToBottom() {
+    const chatbot = document.querySelector('section.scroll-hide');
+    if (chatbot) {
+        chatbot.scrollTop = chatbot.scrollHeight;
+    }
+}
+scrollChatToBottom();
+"""
+
+
+
 with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }") as main_demo:
     chatbot = gr.Chatbot(type="messages", show_share_button=False, show_copy_button=True, visible=False, feedback_options=["Redact From Study"])
     msg = gr.Textbox(show_label=False, submit_btn=True, placeholder="Ask anything", visible=True)
     logout_button = gr.Button("Logout", link="/logout")
-    main_demo.load(load_data, inputs=None, outputs=[chatbot]).then(load_app, inputs=None, outputs=[chatbot, msg])
+    main_demo.load(load_data, inputs=None, outputs=[chatbot]).then(load_app, inputs=None, outputs=[chatbot, msg], js=scroll_to_bottom_js)
     msg.submit(save_msg, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(generate_response, inputs=[chatbot], outputs=[chatbot])
     chatbot.like(redact_msg, inputs=[chatbot], outputs=[chatbot]).then(fn=None, inputs=[], outputs=[], js=fix_redact_ui_bug)
 
