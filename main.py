@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 import openai
+import hashlib
 
 app = FastAPI()
 
@@ -34,7 +35,8 @@ error_message = "Sorry, I can't help right now. Please try again later."
 def get_user(request: Request):
     user = request.session.get('user')
     if user:
-        return user['email']
+        hash_obj = hashlib.sha256(user['email'].encode('utf-8'))
+        return hash_obj.hexdigest()[:10]
     return None
 
 @app.get('/')
