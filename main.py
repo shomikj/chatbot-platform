@@ -29,6 +29,8 @@ app.add_middleware(SessionMiddleware, secret_key="my_secret")
 
 data_folder = Path("/mnt/user_data/")
 
+error_message = "Sorry, I can't help right now. Please try again later."
+
 def get_user(request: Request):
     user = request.session.get('user')
     if user:
@@ -72,16 +74,13 @@ def load_data(request: gr.Request):
     user_interactions_file = data_folder / f"interactions_{request.username}.json"
     user_redactions_file = data_folder / f"redactions_{request.username}.json"
 
-    local_interactions_exist = os.path.exists(user_interactions_file)
-    local_redactions_exist = os.path.exists(user_redactions_file)
-
     history = []
     if os.path.exists(user_interactions_file):
         with user_interactions_file.open("r") as f:
             for line in f:
                 turn = json.loads(line)
                 history.append({"role": "user", "content": turn["input"]})
-                history.append({"role": "assistant", "content": turn["output"]})
+                history.append({"role": "assistant", "content": turn["output"], "tokens": turn["tokens"]})
     
     redactions = []
     if os.path.exists(user_redactions_file):
@@ -110,21 +109,31 @@ def generate_response(request: gr.Request | None, history: list):
     client = openai.OpenAI()
     
     formatted_history = []
-    for h in history:
+    tokens = 0
+    for h in reversed(history):
+        if "tokens" in h:
+            tokens += h["tokens"]
+        if tokens > 100000:
+            break
         formatted_history.append({"role": h["role"], "content": h["content"]})
+    formatted_history.reverse()
 
     response = client.responses.create(
         model="gpt-4.1-mini-2025-04-14",
         input=formatted_history,
-        temperature=1
+        temperature=1,
+        max_output_tokens=1000,
     )
 
-    history.append({"role": "assistant", "content": response.output_text})
+    if response.error:
+        history.append({"role": "assistant", "content": error_message, "tokens": -1})
+    else:
+        history.append({"role": "assistant", "content": response.output_text, "tokens": response.usage.total_tokens})
 
     if request is not None:
         user_interactions_file = data_folder / f"interactions_{request.username}.json"
         with user_interactions_file.open("a") as f:
-            f.write(json.dumps({"timestamp": datetime.now().isoformat(), "input": history[-2]["content"], "output": history[-1]["content"]}))
+            f.write(json.dumps({"timestamp": datetime.now().isoformat(), "input": history[-2]["content"], "output": history[-1]["content"], "tokens": history[-1]["tokens"]}))
             f.write("\n")
 
     return history
