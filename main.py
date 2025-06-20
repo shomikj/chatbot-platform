@@ -79,6 +79,8 @@ def load_data(request: gr.Request):
         with user_interactions_file.open("r") as f:
             for line in f:
                 turn = json.loads(line)
+                if turn["output"]==error_message:
+                    continue
                 history.append({"role": "user", "content": turn["input"]})
                 history.append({"role": "assistant", "content": turn["output"], "tokens": turn["tokens"]})
     
@@ -126,7 +128,7 @@ def generate_response(request: gr.Request | None, history: list):
     )
 
     if response.error:
-        history.append({"role": "assistant", "content": error_message, "tokens": -1})
+        history.append({"role": "assistant", "content": error_message, "tokens": 12})
     else:
         history.append({"role": "assistant", "content": response.output_text, "tokens": response.usage.total_tokens})
 
@@ -184,7 +186,6 @@ function scrollChatToBottom() {
         chatbot.scrollTop = chatbot.scrollHeight;
     }
 }
-scrollChatToBottom();
 """
 
 
