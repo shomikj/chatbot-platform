@@ -156,6 +156,7 @@ def redact_msg(message: gr.LikeData, request: gr.Request | None, history: list):
 
 # Fix the bug that causes the redact button to be highlighted
 
+'''
 fix_redact_ui_bug = """
 function updateFeedbackDiv() {
   // Select the feedback button using a stable attribute
@@ -178,6 +179,34 @@ function updateFeedbackDiv() {
   if (redactButton) {
     redactButton.style.fontWeight = 'normal';
   }
+}
+"""
+'''
+fix_redact_ui_bug = """
+function updateFeedbackDiv() {
+  const feedbackButtons = document.querySelectorAll('button[title="Feedback"]');
+  if (!feedbackButtons.length) return;
+
+  feedbackButtons.forEach(button => {
+    // Update style
+    button.style.color = 'var(--block-label-text-color)';
+
+    // Update SVG path
+    const svgIcon = button.querySelector('svg#icon path');
+    if (svgIcon) {
+      svgIcon.setAttribute('d', 'M6,30H4V2H28l-5.8,9L28,20H6ZM6,18H24.33L19.8,11l4.53-7H6Z');
+    }
+
+    // Add blur on click to remove focus highlight
+    button.addEventListener('click', () => {
+      // Delay blur slightly to allow click handlers to work
+      setTimeout(() => {
+        if (document.activeElement === button) {
+          button.blur();
+        }
+      }, 0);
+    });
+  });
 }
 """
 
