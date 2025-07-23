@@ -26,7 +26,7 @@ oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'},
 )
-app.add_middleware(SessionMiddleware, secret_key="my_secret")
+app.add_middleware(SessionMiddleware, secret_key="my_secret2")
 
 data_folder = Path("/mnt/user_data/")
 
