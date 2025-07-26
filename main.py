@@ -126,6 +126,7 @@ def generate_response(request: gr.Request | None, history: list):
         model="gpt-4.1-mini-2025-04-14",
         input=formatted_history,
         temperature=1,
+        max_output_tokens=1000,
         stream=True,
     )
 
