@@ -30,7 +30,7 @@ app.add_middleware(SessionMiddleware, secret_key="my_secret2")
 
 data_folder = Path("/mnt/user_data/")
 
-error_message = "Sorry, I can't help right now. Please try again later."
+error_message = "Sorry, an error occured when generating your response. Please try again later."
 
 def get_user(request: Request):
     user = request.session.get('user')
@@ -122,17 +122,33 @@ def generate_response(request: gr.Request | None, history: list):
         formatted_history.append({"role": h["role"], "content": h["content"]})
     formatted_history.reverse()
 
-    response = client.responses.create(
+    responses = client.responses.create(
         model="gpt-4.1-mini-2025-04-14",
         input=formatted_history,
         temperature=1,
-        max_output_tokens=1000,
+        stream=True,
     )
 
-    if response.error:
-        history.append({"role": "assistant", "content": error_message, "tokens": 12})
-    else:
-        history.append({"role": "assistant", "content": response.output_text, "tokens": response.usage.total_tokens})
+    response = ""
+    completed = False
+    history.append({"role": "assistant", "content": "", "tokens": 0})
+    for chunk in responses:
+        if chunk.type == "response.output_text.delta":
+            response += chunk.delta
+            history[-1]["content"] = response
+            yield history
+        elif chunk.type == "response.completed":
+            completed = True
+            history[-1]["tokens"] = chunk.response.usage.total_tokens
+            yield history
+        elif chunk.type == "response.error":
+            history[-1]["content"] = error_message
+            history[-1]["tokens"] = 0
+            yield history
+
+    if not completed:
+        history[-1]["content"] = error_message
+        history[-1]["tokens"] = 0
 
     if request is not None:
         user_interactions_file = data_folder / f"interactions_{request.username}.json"
@@ -140,7 +156,7 @@ def generate_response(request: gr.Request | None, history: list):
             f.write(json.dumps({"timestamp": datetime.now().isoformat(), "input": history[-2]["content"], "output": history[-1]["content"], "tokens": history[-1]["tokens"]}))
             f.write("\n")
 
-    return history
+    yield history
 
 # Record redaction feedback and save in local file
 def redact_msg(message: gr.LikeData, request: gr.Request | None, history: list):
