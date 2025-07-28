@@ -102,7 +102,7 @@ def load_data(request: gr.Request):
 
 # Make the chatbot and msg visible only after data loaded
 def load_app():
-    return gr.update(visible=True), gr.update(visible=True)
+    return gr.update(visible=True), gr.update(visible=True, interactive=True)
 
 # Add user's message to chatbot and clear input box
 def save_msg(user_message, history: list):
@@ -220,8 +220,10 @@ function scrollChatToBottom() {
 
 
 with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }") as main_demo:
+    main_demo.queue()
+
     chatbot = gr.Chatbot(type="messages", show_share_button=False, show_copy_button=True, visible=False, feedback_options=["Redact From Study"], height="75vh")
-    msg = gr.Textbox(show_label=False, submit_btn=True, placeholder="Ask anything", visible=False)
+    msg = gr.Textbox(show_label=False, submit_btn=True, placeholder="Ask anything", visible=False, interactive=False)
     logout_button = gr.Button("Logout", link="/logout")
 
     main_demo.load(load_data, inputs=None, outputs=[chatbot]).then(
@@ -233,6 +235,7 @@ with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }
     msg.submit(save_msg, inputs=[msg, chatbot], outputs=[msg, chatbot]).then(generate_response, inputs=[chatbot], outputs=[chatbot]).then(
         fn=_noop, inputs=[], outputs=[], js=scroll_to_bottom_js
     )
+
     chatbot.like(redact_msg, inputs=[chatbot], outputs=[chatbot]).then(fn=_noop, inputs=[], outputs=[], js=fix_redact_ui_bug)
 
 app = gr.mount_gradio_app(app, main_demo, path="/chat", auth_dependency=get_user)
