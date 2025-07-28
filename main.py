@@ -117,7 +117,7 @@ def generate_response(request: gr.Request | None, history: list):
     for h in reversed(history):
         if "tokens" in h:
             tokens += h["tokens"]
-        if tokens > 100000:
+        if tokens > 500000:
             break
         formatted_history.append({"role": h["role"], "content": h["content"]})
     formatted_history.reverse()
