@@ -171,34 +171,12 @@ def redact_msg(message: gr.LikeData, request: gr.Request | None, history: list):
     del history[message.index-1] # Delete the user message
     return history    
 
-# Fix the bug that causes the redact button to be highlighted
 
-'''
-fix_redact_ui_bug = """
-function updateFeedbackDiv() {
-  // Select the feedback button using a stable attribute
-  const feedbackButton = document.querySelector('button[title="Feedback"]');
-  if (!feedbackButton) return;
+def _noop():
+    # this exists only so Gradio always has a Python function to call
+    return
 
-  // Update style
-  feedbackButton.style.color = 'var(--block-label-text-color)';
 
-  // Replace the icon SVG path
-  const svgIcon = feedbackButton.querySelector('svg#icon path');
-  if (svgIcon) {
-    svgIcon.setAttribute('d', 'M6,30H4V2H28l-5.8,9L28,20H6ZM6,18H24.33L19.8,11l4.53-7H6Z');
-  }
-
-  // Select the "Redact From Study" button
-  const redactButton = Array.from(document.querySelectorAll('button'))
-    .find(btn => btn.textContent.trim() === 'Redact From Study');
-
-  if (redactButton) {
-    redactButton.style.fontWeight = 'normal';
-  }
-}
-"""
-'''
 fix_redact_ui_bug = """
 function updateFeedbackDiv() {
   const feedbackButtons = document.querySelectorAll('button[title="Feedback"]');
@@ -249,13 +227,13 @@ with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }
     main_demo.load(load_data, inputs=None, outputs=[chatbot]).then(
         load_app, inputs=None, outputs=[chatbot, msg]
     ).then(
-        fn=None, inputs=[], outputs=[], js=scroll_to_bottom_js
+        fn=_noop, inputs=[], outputs=[], js=scroll_to_bottom_js
     )
 
     msg.submit(save_msg, inputs=[msg, chatbot], outputs=[msg, chatbot]).then(generate_response, inputs=[chatbot], outputs=[chatbot]).then(
-        fn=None, inputs=[], outputs=[], js=scroll_to_bottom_js
+        fn=_noop, inputs=[], outputs=[], js=scroll_to_bottom_js
     )
-    chatbot.like(redact_msg, inputs=[chatbot], outputs=[chatbot]).then(fn=None, inputs=[], outputs=[], js=fix_redact_ui_bug)
+    chatbot.like(redact_msg, inputs=[chatbot], outputs=[chatbot]).then(fn=_noop, inputs=[], outputs=[], js=fix_redact_ui_bug)
 
 app = gr.mount_gradio_app(app, main_demo, path="/chat", auth_dependency=get_user)
 
