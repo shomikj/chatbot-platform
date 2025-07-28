@@ -252,7 +252,7 @@ with gr.Blocks(css=".icon-button-wrapper.top-panel { display: none !important; }
         fn=None, inputs=[], outputs=[], js=scroll_to_bottom_js
     )
 
-    msg.submit(save_msg, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(generate_response, inputs=[chatbot], outputs=[chatbot]).then(
+    msg.submit(save_msg, inputs=[msg, chatbot], outputs=[msg, chatbot]).then(generate_response, inputs=[chatbot], outputs=[chatbot]).then(
         fn=None, inputs=[], outputs=[], js=scroll_to_bottom_js
     )
     chatbot.like(redact_msg, inputs=[chatbot], outputs=[chatbot]).then(fn=None, inputs=[], outputs=[], js=fix_redact_ui_bug)
